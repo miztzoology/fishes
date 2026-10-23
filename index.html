@@ -38,7 +38,6 @@
       position: relative;
     }
 
-    /* Ambient Undersea Canvas FX */
     .ocean-layer {
       position: fixed;
       inset: 0;
@@ -99,7 +98,6 @@
       letter-spacing: 1.5px;
     }
 
-    /* Modern Sonar Core Icon & Brand */
     .brand-header {
       text-align: center;
       margin-bottom: 28px;
@@ -248,7 +246,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Quiz Header */
     .quiz-header {
       display: flex;
       justify-content: space-between;
@@ -354,7 +351,6 @@
       box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
     }
 
-    /* Leaderboard Tables */
     .leaderboard-table {
       width: 100%;
       border-collapse: collapse;
@@ -382,7 +378,6 @@
       font-weight: bold;
     }
 
-    /* Admin Elements */
     .level-timer-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -435,13 +430,13 @@
         <!-- Step 1: Normal Player Field -->
         <div class="form-group" id="userGroup">
           <label for="usernameInput">Player Handle / Call Name</label>
-          <input type="text" id="usernameInput" placeholder="Enter player handle" autocomplete="off" />
+          <input type="text" id="usernameInput" autocomplete="off" />
         </div>
 
         <!-- Step 2: Hidden Secret Password Field (Revealed ONLY after typing 'zoo' & submitting) -->
         <div class="form-group" id="secretPassGroup" style="display: none;">
           <label for="adminPassInput" style="color: var(--gold);">Secret Protocol Clearance</label>
-          <input type="password" id="adminPassInput" placeholder="Enter master cipher" autocomplete="off" />
+          <input type="password" id="adminPassInput" autocomplete="off" />
         </div>
 
         <button type="submit" class="btn btn-primary" id="launchBtn">Start Expedition</button>
@@ -479,7 +474,7 @@
         <!-- Open Input Wrapper -->
         <div class="form-group" id="openInputGroup" style="display: none;">
           <label>Enter exact answer:</label>
-          <input type="text" id="openAnswerInput" placeholder="Type answer here..." autocomplete="off" />
+          <input type="text" id="openAnswerInput" autocomplete="off" />
         </div>
 
         <button class="btn btn-primary" id="submitAnswerBtn" onclick="submitCurrentAnswer()">Lock Answer</button>
@@ -518,9 +513,7 @@
             <th>Recorded Date</th>
           </tr>
         </thead>
-        <tbody id="leaderboardBody">
-          <!-- Rendered dynamically -->
-        </tbody>
+        <tbody id="leaderboardBody"></tbody>
       </table>
 
       <button class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
@@ -570,7 +563,7 @@
 
         <div class="form-group">
           <label>Question Content</label>
-          <input type="text" id="newQText" placeholder="Enter question statement" required />
+          <input type="text" id="newQText" required />
         </div>
 
         <div class="form-group">
@@ -582,10 +575,10 @@
         </div>
 
         <div id="mcqConfigGroup">
-          <div class="form-group"><label>Option A</label><input type="text" id="optA" placeholder="Option A text" /></div>
-          <div class="form-group"><label>Option B</label><input type="text" id="optB" placeholder="Option B text" /></div>
-          <div class="form-group"><label>Option C</label><input type="text" id="optC" placeholder="Option C text" /></div>
-          <div class="form-group"><label>Option D</label><input type="text" id="optD" placeholder="Option D text" /></div>
+          <div class="form-group"><label>Option A</label><input type="text" id="optA" /></div>
+          <div class="form-group"><label>Option B</label><input type="text" id="optB" /></div>
+          <div class="form-group"><label>Option C</label><input type="text" id="optC" /></div>
+          <div class="form-group"><label>Option D</label><input type="text" id="optD" /></div>
           <div class="form-group">
             <label>Correct Option</label>
             <select id="mcqCorrectAnswer">
@@ -600,7 +593,7 @@
         <div id="openConfigGroup" style="display: none;">
           <div class="form-group">
             <label>Accepted Correct Answer</label>
-            <input type="text" id="openCorrectAnswer" placeholder="Enter accepted answer text" />
+            <input type="text" id="openCorrectAnswer" />
           </div>
         </div>
 
@@ -616,14 +609,12 @@
   <script>
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
 
-    /* Initial Clean Structure */
     const DEFAULT_CONFIG = {
       levelTimes: { 1: 30, 2: 25, 3: 20 },
       leaderboard: [],
       questions: []
     };
 
-    /* App Storage Load */
     let appData = JSON.parse(localStorage.getItem('ocean_nexus_data')) || DEFAULT_CONFIG;
     if (!appData.leaderboard) appData.leaderboard = [];
     if (!appData.questions) appData.questions = [];
@@ -639,7 +630,6 @@
     let selectedOptionIndex = null;
     let isZooAttempt = false;
 
-    /* Background Ambient Bubbles */
     function initBubbles() {
       const ocean = document.getElementById('oceanLayer');
       for (let i = 0; i < 18; i++) {
@@ -664,7 +654,6 @@
       document.getElementById(viewId).classList.add('active');
     }
 
-    /* Secret Admin Login Logic */
     const usernameInput = document.getElementById('usernameInput');
     const userGroup = document.getElementById('userGroup');
     const secretPassGroup = document.getElementById('secretPassGroup');
@@ -684,7 +673,6 @@
           return;
         }
 
-        // Check if user entered the secret keyword 'zoo'
         if (val.toLowerCase() === 'zoo') {
           isZooAttempt = true;
           userGroup.style.display = 'none';
@@ -694,11 +682,9 @@
           return;
         }
 
-        // Regular player starting the game
         currentUser = val;
         startExpedition();
       } else {
-        // Checking password after 'zoo' was submitted
         const pass = adminPassInput.value.trim();
         if (pass === 'fishes') {
           openAdminPortal();
@@ -709,7 +695,6 @@
       }
     }
 
-    /* Quiz Gameplay */
     function startExpedition() {
       currentLevel = 1;
       totalScore = 0;
@@ -867,12 +852,12 @@
 
       if (currentLevel < 3) {
         heading.textContent = `Depth Level ${currentLevel} Cleared!`;
-        desc.textContent = `Great run, ${currentUser}! You secured ${levelScore} pts in this depth. Ready for Level ${currentLevel + 1}?`;
+        desc.textContent = `Sector cleared. You secured ${levelScore} pts in this depth. Ready for Level ${currentLevel + 1}?`;
         nextBtn.style.display = 'inline-flex';
         nextBtn.textContent = `Descend to Level ${currentLevel + 1}`;
       } else {
         heading.textContent = `Challenge Conquered!`;
-        desc.textContent = `Expedition finalized, ${currentUser}! You navigated all depths and scored a total of ${totalScore} points.`;
+        desc.textContent = `Expedition finalized. You navigated all depths and scored a total of ${totalScore} points.`;
         nextBtn.style.display = 'none';
         recordLeaderboardEntry(currentUser, totalScore);
       }
@@ -896,7 +881,6 @@
       switchView('entranceView');
     }
 
-    /* Leaderboard Management */
     function recordLeaderboardEntry(name, score) {
       const today = new Date().toISOString().split('T')[0];
       const entry = {
@@ -978,7 +962,6 @@
       }
     }
 
-    /* Admin Portal Operations */
     function openAdminPortal() {
       document.getElementById('timeLvl1').value = appData.levelTimes[1] || 30;
       document.getElementById('timeLvl2').value = appData.levelTimes[2] || 25;
