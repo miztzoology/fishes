@@ -430,23 +430,24 @@
         Enter your player handle to embark on the oceanic challenge.
       </p>
 
-      <form id="entranceForm" onsubmit="handleEntrance(event)">
+      <!-- Replaced form with container to strictly prevent page reload -->
+      <div id="entranceContainer">
         <!-- Step 1: Normal Player Field -->
         <div class="form-group" id="userGroup">
           <label for="usernameInput">Player Handle / Call Name</label>
           <input type="text" id="usernameInput" autocomplete="off" />
         </div>
 
-        <!-- Step 2: Hidden Secret Password Field (Revealed ONLY after typing 'zoo' & submitting) -->
+        <!-- Step 2: Hidden Secret Password Field -->
         <div class="form-group" id="secretPassGroup" style="display: none;">
           <label for="adminPassInput" style="color: var(--gold);">Secret Protocol Clearance</label>
           <input type="password" id="adminPassInput" autocomplete="off" />
         </div>
 
-        <button type="submit" class="btn btn-primary" id="launchBtn">Start Expedition</button>
+        <button type="button" class="btn btn-primary" id="launchBtn" onclick="handleEntrance()">Start Expedition</button>
         <button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 12px;" onclick="showLeaderboardView()">View Leaderboard</button>
         <div class="feedback-msg" id="entranceFeedback"></div>
-      </form>
+      </div>
     </div>
 
     <!-- VIEW 2: QUIZ INTERFACE -->
@@ -472,7 +473,7 @@
       <div id="questionContainer">
         <div class="question-title" id="questionText">Awaiting question deployment...</div>
 
-        <!-- Multiple Choice Wrapper -->
+        <!-- Multiple Choice Options Wrapper -->
         <div class="options-grid" id="optionsGrid" style="display: none;"></div>
 
         <!-- Open Input Wrapper -->
@@ -481,7 +482,7 @@
           <input type="text" id="openAnswerInput" autocomplete="off" />
         </div>
 
-        <button class="btn btn-primary" id="submitAnswerBtn" onclick="submitCurrentAnswer()">Lock Answer</button>
+        <button type="button" class="btn btn-primary" id="submitAnswerBtn" onclick="submitCurrentAnswer()">Lock Answer</button>
       </div>
     </div>
 
@@ -495,9 +496,9 @@
       </div>
 
       <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-        <button class="btn btn-primary" id="nextLevelBtn" onclick="proceedToNextLevel()">Descend to Next Level</button>
-        <button class="btn btn-secondary" onclick="showLeaderboardView()">View Leaderboard</button>
-        <button class="btn btn-secondary" onclick="resetToEntrance()">Return to Main Menu</button>
+        <button type="button" class="btn btn-primary" id="nextLevelBtn" onclick="proceedToNextLevel()">Descend to Next Level</button>
+        <button type="button" class="btn btn-secondary" onclick="showLeaderboardView()">View Leaderboard</button>
+        <button type="button" class="btn btn-secondary" onclick="resetToEntrance()">Return to Main Menu</button>
       </div>
     </div>
 
@@ -505,7 +506,7 @@
     <div id="leaderboardView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>🏆 Hall of Oceanic Champions</h2>
-        <button class="btn btn-secondary" onclick="resetToEntrance()">Back</button>
+        <button type="button" class="btn btn-secondary" onclick="resetToEntrance()">Back</button>
       </div>
 
       <table class="leaderboard-table">
@@ -520,14 +521,14 @@
         <tbody id="leaderboardBody"></tbody>
       </table>
 
-      <button class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
+      <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
     </div>
 
     <!-- VIEW 5: ADMIN SECRET PORTAL -->
     <div id="adminView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h2>🛠 Marine Command // Secret Portal</h2>
-        <button class="btn btn-secondary" onclick="resetToEntrance()">Exit Portal</button>
+        <button type="button" class="btn btn-secondary" onclick="resetToEntrance()">Exit Portal</button>
       </div>
 
       <!-- Level Timers -->
@@ -546,12 +547,12 @@
           <input type="number" id="timeLvl3" min="5" max="300" />
         </div>
       </div>
-      <button class="btn btn-secondary" style="margin-bottom: 32px;" onclick="saveTimers()">Update Level Timers</button>
+      <button type="button" class="btn btn-secondary" style="margin-bottom: 32px;" onclick="saveTimers()">Update Level Timers</button>
 
       <!-- Manage Players & Leaderboard -->
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Leaderboard Player Registry</h3>
       <div id="adminLeaderboardList" style="margin-bottom: 24px;"></div>
-      <button class="btn btn-danger" style="margin-bottom: 32px;" onclick="clearAllLeaderboard()">Wipe Entire Leaderboard</button>
+      <button type="button" class="btn btn-danger" style="margin-bottom: 32px;" onclick="clearAllLeaderboard()">Wipe Entire Leaderboard</button>
 
       <!-- Deploy New Question -->
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Add Ocean Question</h3>
@@ -611,14 +612,17 @@
   </div>
 
   <script>
-    // ========================================================
-    // YOUR SUPABASE CREDENTIALS DIRECTLY INTEGRATED
-    // ========================================================
     const SUPABASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
-    // ========================================================
 
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    let supabase = null;
+    try {
+      if (window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.error('Supabase init error:', e);
+    }
 
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
 
@@ -659,27 +663,20 @@
 
     async function loadDataFromSupabase() {
       if (!supabase) return;
-
       try {
-        // 1. Level Timers
-        const { data: timersData } = await supabase.from('level_config').select('*');
-        if (timersData && timersData.length > 0) {
-          timersData.forEach(row => {
+        const [timersRes, qRes, lbRes] = await Promise.all([
+          supabase.from('level_config').select('*'),
+          supabase.from('questions').select('*').order('created_at', { ascending: true }),
+          supabase.from('leaderboard').select('*').order('score', { ascending: false })
+        ]);
+
+        if (timersRes.data && timersRes.data.length > 0) {
+          timersRes.data.forEach(row => {
             levelTimes[row.level_id] = row.time_limit;
           });
         }
-
-        // 2. Questions
-        const { data: qData } = await supabase.from('questions').select('*').order('created_at', { ascending: true });
-        if (qData) {
-          questionsCache = qData;
-        }
-
-        // 3. Leaderboard
-        const { data: lbData } = await supabase.from('leaderboard').select('*').order('score', { ascending: false });
-        if (lbData) {
-          leaderboardCache = lbData;
-        }
+        if (qRes.data) questionsCache = qRes.data;
+        if (lbRes.data) leaderboardCache = lbRes.data;
       } catch (err) {
         console.error('Supabase load error:', err);
       }
@@ -692,8 +689,22 @@
     const launchBtn = document.getElementById('launchBtn');
     const feedback = document.getElementById('entranceFeedback');
 
-    function handleEntrance(e) {
-      e.preventDefault();
+    // Allow pressing "Enter" key on inputs without reloading
+    usernameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleEntrance();
+      }
+    });
+
+    adminPassInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleEntrance();
+      }
+    });
+
+    async function handleEntrance() {
       feedback.textContent = '';
 
       if (!isZooAttempt) {
@@ -704,20 +715,29 @@
           return;
         }
 
+        // Secret triggered
         if (val.toLowerCase() === 'zoo') {
           isZooAttempt = true;
           userGroup.style.display = 'none';
           secretPassGroup.style.display = 'block';
           launchBtn.textContent = 'Unlock Command Center';
+          adminPassInput.value = '';
           adminPassInput.focus();
           return;
         }
 
+        // Regular player entering
         currentUser = val;
-        startExpedition();
+        launchBtn.textContent = 'Connecting...';
+        launchBtn.disabled = true;
+
+        await startExpedition();
+        launchBtn.textContent = 'Start Expedition';
+        launchBtn.disabled = false;
       } else {
+        // Checking secret admin password
         const pass = adminPassInput.value.trim();
-        if (pass === 'fishes') {
+        if (pass.toLowerCase() === 'fishes') {
           openAdminPortal();
         } else {
           feedback.style.color = 'var(--danger)';
@@ -728,6 +748,14 @@
 
     async function startExpedition() {
       await loadDataFromSupabase();
+      
+      const lvl1Questions = questionsCache.filter(q => q.level === 1);
+      if (lvl1Questions.length === 0) {
+        feedback.style.color = 'var(--danger)';
+        feedback.textContent = 'No questions currently in database. Log in as "zoo" to add questions.';
+        return;
+      }
+
       currentLevel = 1;
       totalScore = 0;
       document.getElementById('playerDisplayName').textContent = currentUser;
@@ -752,7 +780,7 @@
       document.getElementById('pointsPerQBadge').textContent = `+${pts} ${pts === 1 ? 'Pt' : 'Pts'} / Q`;
 
       if (currentQuestions.length === 0) {
-        alert(`No questions currently configured for Level ${lvl}. Please add them via the Admin Portal.`);
+        alert(`No questions configured for Level ${lvl}. Please add questions via Admin Portal.`);
         resetToEntrance();
         return;
       }
@@ -911,6 +939,7 @@
       adminPassInput.value = '';
       feedback.textContent = '';
       launchBtn.textContent = 'Start Expedition';
+      launchBtn.disabled = false;
       switchView('entranceView');
     }
 
@@ -970,7 +999,7 @@
             <span style="margin-left: 10px; color: var(--gold);">${entry.score} Points</span>
             <span style="margin-left: 10px; color: var(--text-muted); font-size: 0.8rem;">(${entry.recorded_date || ''})</span>
           </div>
-          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeLeaderboardUser('${entry.id}')">
+          <button type="button" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeLeaderboardUser('${entry.id}')">
             Remove Player
           </button>
         `;
@@ -1038,7 +1067,10 @@
 
     async function handleCreateQuestion(e) {
       e.preventDefault();
-      if (!supabase) return;
+      if (!supabase) {
+        alert('Supabase client is not initialized.');
+        return;
+      }
 
       const level = parseInt(document.getElementById('newQLevel').value);
       const text = document.getElementById('newQText').value.trim();
@@ -1135,7 +1167,7 @@
             <div style="font-size: 1rem; margin-bottom: 6px; font-weight: 600;">${q.text}</div>
             <div style="font-size: 0.85rem; color: var(--text-muted);">${answerPreview}</div>
           </div>
-          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeQuestion('${q.id}')">
+          <button type="button" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeQuestion('${q.id}')">
             Delete
           </button>
         `;
