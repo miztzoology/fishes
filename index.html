@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OCEAN NEXUS | Aquatic Challenge Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020713;
+      --bg-card: rgba(6, 21, 40, 0.82);
+      --border-glow: rgba(0, 242, 254, 0.35);
+      --cyan: #00f2fe;
+      --teal: #4facfe;
+      --gold: #ffd166;
+      --danger: #ff477e;
+      --success: #00f5a0;
+      --text: #e2f1ff;
+      --text-muted: #83a4c5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #08203d 0%, var(--bg-dark) 85%);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient Undersea Canvas FX */
+    .ocean-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .light-ray {
+      position: absolute;
+      top: -20%;
+      left: 25%;
+      width: 280px;
+      height: 140%;
+      background: linear-gradient(180deg, rgba(0, 242, 254, 0.1) 0%, transparent 80%);
+      transform: rotate(-25deg);
+      filter: blur(50px);
+    }
+
+    .bubble {
+      position: absolute;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(0, 242, 254, 0.1));
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      animation: floatUp 12s infinite linear;
+      bottom: -60px;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      15% { opacity: 0.6; }
+      85% { opacity: 0.6; }
+      100% { transform: translateY(-110vh) scale(1.3); opacity: 0; }
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-glow);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 242, 254, 0.08);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.3s ease;
+    }
+
+    h1, h2, h3, .nexus-brand {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1.5px;
+    }
+
+    /* Modern Sonar Core Icon & Brand */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .sonar-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(8, 26, 48, 0.8) 70%);
+      border: 2px solid var(--cyan);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.45);
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .sonar-icon::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--cyan);
+      animation: pulse 2.2s infinite ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.7); opacity: 0; }
+    }
+
+    .sonar-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
+    }
+
+    .nexus-brand {
+      font-size: 2.6rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 15%, var(--cyan) 75%, var(--teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .tagline {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(3, 14, 28, 0.85);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: 0.3s border-color, 0.3s box-shadow;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--teal));
+      color: #030e1c;
+      box-shadow: 0 8px 24px rgba(0, 242, 254, 0.3);
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 242, 254, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Quiz Header */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-level {
+      background: rgba(0, 242, 254, 0.15);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .badge-points {
+      background: rgba(255, 209, 102, 0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: 'Orbitron', sans-serif;
+      margin-left: 8px;
+    }
+
+    .timer-box {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timer-progress {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--teal));
+      transition: width 1s linear;
+    }
+
+    .timer-warning {
+      background: var(--danger) !important;
+    }
+
+    .question-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .option-btn {
+      padding: 16px 20px;
+      text-align: left;
+      background: rgba(8, 22, 40, 0.6);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .option-btn:hover {
+      background: rgba(0, 242, 254, 0.12);
+      border-color: var(--cyan);
+      transform: translateX(4px);
+    }
+
+    .option-btn.selected {
+      background: rgba(0, 242, 254, 0.25);
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+    }
+
+    /* Leaderboard Tables */
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      margin-bottom: 24px;
+    }
+
+    .leaderboard-table th {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 2px solid var(--border-glow);
+      color: var(--cyan);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+    }
+
+    .leaderboard-table td {
+      padding: 14px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.95rem;
+    }
+
+    .leaderboard-table tr:first-child td {
+      color: var(--gold);
+      font-weight: bold;
+    }
+
+    /* Admin Elements */
+    .level-timer-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .registry-item {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .feedback-msg {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ocean-layer" id="oceanLayer">
+    <div class="light-ray"></div>
+  </div>
+
+  <div class="app-container">
+    <div class="brand-header">
+      <div class="sonar-icon">
+        <div class="sonar-dot"></div>
+      </div>
+      <div class="nexus-brand">OCEAN NEXUS</div>
+      <div class="tagline">Deep-Sea Marine Expedition & Knowledge Grid</div>
+    </div>
+
+    <!-- VIEW 1: ENTRANCE SCREEN -->
+    <div id="entranceView" class="glass-card view active">
+      <h2 style="margin-bottom: 16px; text-align: center;">Player Authentication</h2>
+      <p style="color: var(--text-muted); text-align: center; margin-bottom: 24px;">
+        Enter your player handle to embark on the oceanic challenge.
+      </p>
+
+      <form id="entranceForm" onsubmit="handleEntrance(event)">
+        <!-- Step 1: Normal Player Field -->
+        <div class="form-group" id="userGroup">
+          <label for="usernameInput">Player Handle / Call Name</label>
+          <input type="text" id="usernameInput" placeholder="e.g. Leviathan, Marlin" autocomplete="off" />
+        </div>
+
+        <!-- Step 2: Hidden Secret Password Field (Revealed ONLY after typing 'zoo' & submitting) -->
+        <div class="form-group" id="secretPassGroup" style="display: none;">
+          <label for="adminPassInput" style="color: var(--gold);">Secret Protocol Clearance</label>
+          <input type="password" id="adminPassInput" placeholder="Enter master cipher" autocomplete="off" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="launchBtn">Start Expedition</button>
+        <button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 12px;" onclick="showLeaderboardView()">View Leaderboard</button>
+        <div class="feedback-msg" id="entranceFeedback"></div>
+      </form>
+    </div>
+
+    <!-- VIEW 2: QUIZ INTERFACE -->
+    <div id="quizView" class="glass-card view">
+      <div class="quiz-header">
+        <div>
+          <span class="badge badge-level" id="levelBadge">Level 1: Sunlit Zone</span>
+          <span class="badge badge-points" id="pointsPerQBadge">+1 Pt / Q</span>
+          <div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">
+            Player: <strong id="playerDisplayName" style="color: #fff;"></strong> | Total: <strong id="liveTotalScore" style="color: var(--gold);">0</strong> pts
+          </div>
+        </div>
+        <div class="timer-box">
+          <span>⏱</span>
+          <span id="timerDisplay">30s</span>
+        </div>
+      </div>
+
+      <div class="timer-progress">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+
+      <div id="questionContainer">
+        <div class="question-title" id="questionText">Awaiting question deployment...</div>
+
+        <!-- Multiple Choice Wrapper -->
+        <div class="options-grid" id="optionsGrid" style="display: none;"></div>
+
+        <!-- Open Input Wrapper -->
+        <div class="form-group" id="openInputGroup" style="display: none;">
+          <label>Enter exact answer:</label>
+          <input type="text" id="openAnswerInput" placeholder="Type here..." autocomplete="off" />
+        </div>
+
+        <button class="btn btn-primary" id="submitAnswerBtn" onclick="submitCurrentAnswer()">Lock Answer</button>
+      </div>
+    </div>
+
+    <!-- VIEW 3: LEVEL SUMMARY -->
+    <div id="summaryView" class="glass-card view" style="text-align: center;">
+      <h2 id="summaryHeading" style="margin-bottom: 12px;">Sector Completed</h2>
+      <p id="summaryDesc" style="color: var(--text-muted); margin-bottom: 24px;"></p>
+      
+      <div style="font-size: 2.4rem; font-family: 'Orbitron'; color: var(--gold); margin-bottom: 24px;" id="summaryScore">
+        0 PTS
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-primary" id="nextLevelBtn" onclick="proceedToNextLevel()">Descend to Next Level</button>
+        <button class="btn btn-secondary" onclick="showLeaderboardView()">View Leaderboard</button>
+        <button class="btn btn-secondary" onclick="resetToEntrance()">Return to Main Menu</button>
+      </div>
+    </div>
+
+    <!-- VIEW 4: PUBLIC LEADERBOARD -->
+    <div id="leaderboardView" class="glass-card view">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>🏆 Hall of Oceanic Champions</h2>
+        <button class="btn btn-secondary" onclick="resetToEntrance()">Back</button>
+      </div>
+
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Points</th>
+            <th>Recorded Date</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <!-- Rendered dynamically -->
+        </tbody>
+      </table>
+
+      <button class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
+    </div>
+
+    <!-- VIEW 5: ADMIN SECRET PORTAL -->
+    <div id="adminView" class="glass-card view">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h2>🛠 Marine Command // Secret Portal</h2>
+        <button class="btn btn-secondary" onclick="resetToEntrance()">Exit Portal</button>
+      </div>
+
+      <!-- Level Timers -->
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Adjust Level Countdown Timers (Seconds)</h3>
+      <div class="level-timer-row">
+        <div class="form-group">
+          <label>Level 1 (Easy • 1 pt)</label>
+          <input type="number" id="timeLvl1" min="5" max="300" />
+        </div>
+        <div class="form-group">
+          <label>Level 2 (Medium • 2 pts)</label>
+          <input type="number" id="timeLvl2" min="5" max="300" />
+        </div>
+        <div class="form-group">
+          <label>Level 3 (Hard • 3 pts)</label>
+          <input type="number" id="timeLvl3" min="5" max="300" />
+        </div>
+      </div>
+      <button class="btn btn-secondary" style="margin-bottom: 32px;" onclick="saveTimers()">Update Level Timers</button>
+
+      <!-- Manage Players & Leaderboard -->
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Leaderboard Player Registry</h3>
+      <div id="adminLeaderboardList" style="margin-bottom: 24px;"></div>
+      <button class="btn btn-danger" style="margin-bottom: 32px;" onclick="clearAllLeaderboard()">Wipe Entire Leaderboard</button>
+
+      <!-- Deploy New Question -->
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Add Ocean Question</h3>
+      <form id="addQuestionForm" onsubmit="handleCreateQuestion(event)" style="margin-bottom: 32px;">
+        <div class="form-group">
+          <label>Target Level & Difficulty Tier</label>
+          <select id="newQLevel">
+            <option value="1">Level 1 - Sunlit Zone (1 Point)</option>
+            <option value="2">Level 2 - Twilight Zone (2 Points)</option>
+            <option value="3">Level 3 - Abyssal Trench (3 Points)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Question Content</label>
+          <input type="text" id="newQText" placeholder="e.g. Which shark has organs called Ampullae of Lorenzini?" required />
+        </div>
+
+        <div class="form-group">
+          <label>Question Format</label>
+          <select id="newQType" onchange="toggleQuestionTypeFields()">
+            <option value="mcq">Multiple Choice (With Options)</option>
+            <option value="open">Open-Ended (No Options, Type-In)</option>
+          </select>
+        </div>
+
+        <div id="mcqConfigGroup">
+          <div class="form-group"><label>Option A</label><input type="text" id="optA" placeholder="Option A" /></div>
+          <div class="form-group"><label>Option B</label><input type="text" id="optB" placeholder="Option B" /></div>
+          <div class="form-group"><label>Option C</label><input type="text" id="optC" placeholder="Option C" /></div>
+          <div class="form-group"><label>Option D</label><input type="text" id="optD" placeholder="Option D" /></div>
+          <div class="form-group">
+            <label>Correct Option</label>
+            <select id="mcqCorrectAnswer">
+              <option value="0">Option A</option>
+              <option value="1">Option B</option>
+              <option value="2">Option C</option>
+              <option value="3">Option D</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="openConfigGroup" style="display: none;">
+          <div class="form-group">
+            <label>Accepted Correct Answer</label>
+            <input type="text" id="openCorrectAnswer" placeholder="e.g. Great White Shark" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Deploy Question to Database</button>
+      </form>
+
+      <!-- Active Questions Registry -->
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Database Query Registry</h3>
+      <div id="questionsRegistry"></div>
+    </div>
+  </div>
+
+  <script>
+    const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
+
+    /* Initial Clean Structure (No Pre-filled Questions or Players) */
+    const DEFAULT_CONFIG = {
+      levelTimes: { 1: 30, 2: 25, 3: 20 },
+      leaderboard: [],
+      questions: []
+    };
+
+    /* App Storage Load */
+    let appData = JSON.parse(localStorage.getItem('ocean_nexus_data')) || DEFAULT_CONFIG;
+    if (!appData.leaderboard) appData.leaderboard = [];
+    if (!appData.questions) appData.questions = [];
+
+    let currentUser = '';
+    let currentLevel = 1;
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let totalScore = 0;
+    let levelScore = 0;
+    let timerInterval = null;
+    let timeRemaining = 0;
+    let selectedOptionIndex = null;
+    let isZooAttempt = false;
+
+    /* Background Ambient Bubbles */
+    function initBubbles() {
+      const ocean = document.getElementById('oceanLayer');
+      for (let i = 0; i < 18; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        const size = Math.random() * 24 + 10;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.animationDuration = `${Math.random() * 8 + 7}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        ocean.appendChild(bubble);
+      }
+    }
+
+    function syncStorage() {
+      localStorage.setItem('ocean_nexus_data', JSON.stringify(appData));
+    }
+
+    function switchView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    /* Secret Admin Login Logic */
+    const usernameInput = document.getElementById('usernameInput');
+    const userGroup = document.getElementById('userGroup');
+    const secretPassGroup = document.getElementById('secretPassGroup');
+    const adminPassInput = document.getElementById('adminPassInput');
+    const launchBtn = document.getElementById('launchBtn');
+    const feedback = document.getElementById('entranceFeedback');
+
+    function handleEntrance(e) {
+      e.preventDefault();
+      feedback.textContent = '';
+
+      if (!isZooAttempt) {
+        const val = usernameInput.value.trim();
+        if (!val) {
+          feedback.style.color = 'var(--danger)';
+          feedback.textContent = 'Please enter a player handle to start.';
+          return;
+        }
+
+        // Check if user entered the secret keyword 'zoo'
+        if (val.toLowerCase() === 'zoo') {
+          isZooAttempt = true;
+          userGroup.style.display = 'none';
+          secretPassGroup.style.display = 'block';
+          launchBtn.textContent = 'Unlock Command Center';
+          adminPassInput.focus();
+          return;
+        }
+
+        // Regular player starting the game
+        currentUser = val;
+        startExpedition();
+      } else {
+        // Checking password after 'zoo' was submitted
+        const pass = adminPassInput.value.trim();
+        if (pass === 'fishes') {
+          openAdminPortal();
+        } else {
+          feedback.style.color = 'var(--danger)';
+          feedback.textContent = 'Invalid cipher sequence. Access denied.';
+        }
+      }
+    }
+
+    /* Quiz Gameplay */
+    function startExpedition() {
+      currentLevel = 1;
+      totalScore = 0;
+      document.getElementById('playerDisplayName').textContent = currentUser;
+      document.getElementById('liveTotalScore').textContent = '0';
+      loadLevel(currentLevel);
+    }
+
+    function loadLevel(lvl) {
+      currentLevel = lvl;
+      currentQuestionIndex = 0;
+      levelScore = 0;
+      currentQuestions = appData.questions.filter(q => q.level === lvl);
+
+      const zoneNames = {
+        1: 'Level 1: Sunlit Zone',
+        2: 'Level 2: Twilight Zone',
+        3: 'Level 3: Abyssal Trench'
+      };
+      
+      const pts = LEVEL_POINTS[lvl] || 1;
+      document.getElementById('levelBadge').textContent = zoneNames[lvl] || `Level ${lvl}`;
+      document.getElementById('pointsPerQBadge').textContent = `+${pts} ${pts === 1 ? 'Pt' : 'Pts'} / Q`;
+
+      if (currentQuestions.length === 0) {
+        alert(`No questions currently configured for Level ${lvl}. Please add them via the Admin Portal.`);
+        resetToEntrance();
+        return;
+      }
+
+      switchView('quizView');
+      displayQuestion();
+    }
+
+    function displayQuestion() {
+      clearInterval(timerInterval);
+      selectedOptionIndex = null;
+
+      const q = currentQuestions[currentQuestionIndex];
+      const maxTime = appData.levelTimes[currentLevel] || 30;
+      timeRemaining = maxTime;
+
+      updateTimerUI(maxTime);
+      startTimer(maxTime);
+
+      document.getElementById('questionText').textContent = `${currentQuestionIndex + 1}. ${q.text}`;
+
+      const optionsGrid = document.getElementById('optionsGrid');
+      const openInputGroup = document.getElementById('openInputGroup');
+      const openInput = document.getElementById('openAnswerInput');
+      openInput.value = '';
+
+      if (q.type === 'mcq') {
+        openInputGroup.style.display = 'none';
+        optionsGrid.style.display = 'grid';
+        optionsGrid.innerHTML = '';
+
+        q.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = `${String.fromCharCode(65 + idx)}. ${opt}`;
+          btn.type = 'button';
+          btn.onclick = () => {
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedOptionIndex = idx;
+          };
+          optionsGrid.appendChild(btn);
+        });
+      } else {
+        optionsGrid.style.display = 'none';
+        openInputGroup.style.display = 'block';
+      }
+    }
+
+    function startTimer(maxTime) {
+      const timerDisplay = document.getElementById('timerDisplay');
+      const timerBar = document.getElementById('timerBar');
+
+      timerDisplay.textContent = `${timeRemaining}s`;
+      timerBar.style.width = '100%';
+      timerBar.classList.remove('timer-warning');
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        timerDisplay.textContent = `${timeRemaining}s`;
+        const pct = (timeRemaining / maxTime) * 100;
+        timerBar.style.width = `${pct}%`;
+
+        if (timeRemaining <= 5) {
+          timerBar.classList.add('timer-warning');
+        }
+
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          advanceQuestion(false);
+        }
+      }, 1000);
+    }
+
+    function updateTimerUI(maxTime) {
+      const timerDisplay = document.getElementById('timerDisplay');
+      const timerBar = document.getElementById('timerBar');
+      timerDisplay.textContent = `${maxTime}s`;
+      timerBar.style.width = '100%';
+      timerBar.classList.remove('timer-warning');
+    }
+
+    function submitCurrentAnswer() {
+      const q = currentQuestions[currentQuestionIndex];
+      let isCorrect = false;
+
+      if (q.type === 'mcq') {
+        if (selectedOptionIndex === null) {
+          alert('Please select an option before continuing.');
+          return;
+        }
+        isCorrect = selectedOptionIndex === q.correct;
+      } else {
+        const userText = document.getElementById('openAnswerInput').value.trim().toLowerCase();
+        if (!userText) {
+          alert('Please enter your answer.');
+          return;
+        }
+        isCorrect = userText === String(q.correct).trim().toLowerCase();
+      }
+
+      advanceQuestion(isCorrect);
+    }
+
+    function advanceQuestion(wasCorrect) {
+      clearInterval(timerInterval);
+      if (wasCorrect) {
+        const points = LEVEL_POINTS[currentLevel] || 1;
+        totalScore += points;
+        levelScore += points;
+        document.getElementById('liveTotalScore').textContent = totalScore;
+      }
+
+      currentQuestionIndex++;
+      if (currentQuestionIndex < currentQuestions.length) {
+        displayQuestion();
+      } else {
+        finishLevel();
+      }
+    }
+
+    function finishLevel() {
+      const heading = document.getElementById('summaryHeading');
+      const desc = document.getElementById('summaryDesc');
+      const scoreDisplay = document.getElementById('summaryScore');
+      const nextBtn = document.getElementById('nextLevelBtn');
+
+      scoreDisplay.textContent = `${totalScore} TOTAL PTS`;
+
+      if (currentLevel < 3) {
+        heading.textContent = `Depth Level ${currentLevel} Cleared!`;
+        desc.textContent = `Great run, ${currentUser}! You secured ${levelScore} pts in this depth. Ready for Level ${currentLevel + 1}?`;
+        nextBtn.style.display = 'inline-flex';
+        nextBtn.textContent = `Descend to Level ${currentLevel + 1}`;
+      } else {
+        heading.textContent = `Challenge Conquered!`;
+        desc.textContent = `Expedition finalized, ${currentUser}! You navigated all depths and scored a total of ${totalScore} points.`;
+        nextBtn.style.display = 'none';
+        recordLeaderboardEntry(currentUser, totalScore);
+      }
+
+      switchView('summaryView');
+    }
+
+    function proceedToNextLevel() {
+      loadLevel(currentLevel + 1);
+    }
+
+    function resetToEntrance() {
+      clearInterval(timerInterval);
+      isZooAttempt = false;
+      userGroup.style.display = 'block';
+      secretPassGroup.style.display = 'none';
+      usernameInput.value = '';
+      adminPassInput.value = '';
+      feedback.textContent = '';
+      launchBtn.textContent = 'Start Expedition';
+      switchView('entranceView');
+    }
+
+    /* Leaderboard Management */
+    function recordLeaderboardEntry(name, score) {
+      const today = new Date().toISOString().split('T')[0];
+      const entry = {
+        id: 'p_' + Date.now(),
+        name,
+        score,
+        date: today
+      };
+      appData.leaderboard.push(entry);
+      appData.leaderboard.sort((a, b) => b.score - a.score);
+      syncStorage();
+    }
+
+    function showLeaderboardView() {
+      const tbody = document.getElementById('leaderboardBody');
+      tbody.innerHTML = '';
+
+      if (appData.leaderboard.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 24px;">No player records registered yet.</td></tr>`;
+      } else {
+        appData.leaderboard.forEach((entry, i) => {
+          const row = document.createElement('tr');
+          let rankBadge = `#${i + 1}`;
+          if (i === 0) rankBadge = '🥇 #1';
+          if (i === 1) rankBadge = '🥈 #2';
+          if (i === 2) rankBadge = '🥉 #3';
+
+          row.innerHTML = `
+            <td>${rankBadge}</td>
+            <td>${entry.name}</td>
+            <td><strong>${entry.score} pts</strong></td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${entry.date}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      switchView('leaderboardView');
+    }
+
+    function renderAdminLeaderboard() {
+      const list = document.getElementById('adminLeaderboardList');
+      list.innerHTML = '';
+
+      if (appData.leaderboard.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No player records on leaderboard.</p>';
+        return;
+      }
+
+      appData.leaderboard.forEach((entry, idx) => {
+        const div = document.createElement('div');
+        div.className = 'registry-item';
+        div.innerHTML = `
+          <div>
+            <strong style="color: var(--cyan);">#${idx + 1} ${entry.name}</strong>
+            <span style="margin-left: 10px; color: var(--gold);">${entry.score} Points</span>
+            <span style="margin-left: 10px; color: var(--text-muted); font-size: 0.8rem;">(${entry.date})</span>
+          </div>
+          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeLeaderboardUser('${entry.id}')">
+            Remove Player
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function removeLeaderboardUser(id) {
+      if (confirm('Remove this player from the leaderboard?')) {
+        appData.leaderboard = appData.leaderboard.filter(e => e.id !== id);
+        syncStorage();
+        renderAdminLeaderboard();
+      }
+    }
+
+    function clearAllLeaderboard() {
+      if (confirm('Are you sure you want to completely erase the entire leaderboard?')) {
+        appData.leaderboard = [];
+        syncStorage();
+        renderAdminLeaderboard();
+      }
+    }
+
+    /* Admin Portal Operations */
+    function openAdminPortal() {
+      document.getElementById('timeLvl1').value = appData.levelTimes[1] || 30;
+      document.getElementById('timeLvl2').value = appData.levelTimes[2] || 25;
+      document.getElementById('timeLvl3').value = appData.levelTimes[3] || 20;
+      renderAdminLeaderboard();
+      renderAdminQuestionsList();
+      switchView('adminView');
+    }
+
+    function saveTimers() {
+      appData.levelTimes[1] = parseInt(document.getElementById('timeLvl1').value) || 30;
+      appData.levelTimes[2] = parseInt(document.getElementById('timeLvl2').value) || 25;
+      appData.levelTimes[3] = parseInt(document.getElementById('timeLvl3').value) || 20;
+      syncStorage();
+      alert('Level timers updated successfully!');
+    }
+
+    function toggleQuestionTypeFields() {
+      const type = document.getElementById('newQType').value;
+      const mcqGroup = document.getElementById('mcqConfigGroup');
+      const openGroup = document.getElementById('openConfigGroup');
+
+      if (type === 'mcq') {
+        mcqGroup.style.display = 'block';
+        openGroup.style.display = 'none';
+      } else {
+        mcqGroup.style.display = 'none';
+        openGroup.style.display = 'block';
+      }
+    }
+
+    function handleCreateQuestion(e) {
+      e.preventDefault();
+      const level = parseInt(document.getElementById('newQLevel').value);
+      const text = document.getElementById('newQText').value.trim();
+      const type = document.getElementById('newQType').value;
+
+      if (!text) return;
+
+      const newQuestion = {
+        id: 'q_' + Date.now(),
+        level,
+        type,
+        text
+      };
+
+      if (type === 'mcq') {
+        const a = document.getElementById('optA').value.trim();
+        const b = document.getElementById('optB').value.trim();
+        const c = document.getElementById('optC').value.trim();
+        const d = document.getElementById('optD').value.trim();
+
+        if (!a || !b || !c || !d) {
+          alert('Please enter all 4 options for multiple choice.');
+          return;
+        }
+
+        newQuestion.options = [a, b, c, d];
+        newQuestion.correct = parseInt(document.getElementById('mcqCorrectAnswer').value);
+      } else {
+        const correctVal = document.getElementById('openCorrectAnswer').value.trim();
+        if (!correctVal) {
+          alert('Please provide the correct answer string.');
+          return;
+        }
+        newQuestion.correct = correctVal;
+      }
+
+      appData.questions.push(newQuestion);
+      syncStorage();
+      renderAdminQuestionsList();
+
+      document.getElementById('newQText').value = '';
+      document.getElementById('optA').value = '';
+      document.getElementById('optB').value = '';
+      document.getElementById('optC').value = '';
+      document.getElementById('optD').value = '';
+      document.getElementById('openCorrectAnswer').value = '';
+      alert('Question added successfully!');
+    }
+
+    function removeQuestion(id) {
+      if (confirm('Delete this question from the database?')) {
+        appData.questions = appData.questions.filter(q => q.id !== id);
+        syncStorage();
+        renderAdminQuestionsList();
+      }
+    }
+
+    function renderAdminQuestionsList() {
+      const list = document.getElementById('questionsRegistry');
+      list.innerHTML = '';
+
+      if (appData.questions.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted);">No questions currently in the database. Add some above to start the game.</p>';
+        return;
+      }
+
+      appData.questions.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'registry-item';
+        
+        let answerPreview = '';
+        if (q.type === 'mcq') {
+          answerPreview = `Answer: [${String.fromCharCode(65 + q.correct)}] ${q.options[q.correct]}`;
+        } else {
+          answerPreview = `Answer: "${q.correct}"`;
+        }
+
+        const pts = LEVEL_POINTS[q.level];
+
+        item.innerHTML = `
+          <div>
+            <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 4px; font-weight: bold;">
+              LEVEL ${q.level} (${pts} ${pts === 1 ? 'PT' : 'PTS'}) • TYPE: ${q.type.toUpperCase()}
+            </div>
+            <div style="font-size: 1rem; margin-bottom: 6px; font-weight: 600;">${q.text}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">${answerPreview}</div>
+          </div>
+          <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeQuestion('${q.id}')">
+            Delete
+          </button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    window.onload = initBubbles;
+  </script>
+</body>
+</html>
