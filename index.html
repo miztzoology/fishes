@@ -14,7 +14,7 @@
   <style>
     :root {
       --bg-dark: #020713;
-      --bg-card: rgba(6, 21, 40, 0.82);
+      --bg-card: rgba(6, 21, 40, 0.88);
       --border-glow: rgba(0, 242, 254, 0.35);
       --cyan: #00f2fe;
       --teal: #4facfe;
@@ -177,7 +177,7 @@
     input[type="text"], input[type="password"], input[type="number"], select {
       width: 100%;
       padding: 14px 18px;
-      background: rgba(3, 14, 28, 0.85);
+      background: rgba(3, 14, 28, 0.9);
       border: 1px solid rgba(0, 242, 254, 0.3);
       border-radius: 12px;
       color: #fff;
@@ -247,6 +247,23 @@
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Secret Pop-up Box Below Input */
+    .secret-popup {
+      display: none;
+      background: rgba(14, 38, 66, 0.95);
+      border: 2px solid var(--gold);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 209, 102, 0.3);
+      border-radius: 14px;
+      padding: 20px;
+      margin-top: 18px;
+      animation: slideDown 0.35s ease forwards;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -430,23 +447,29 @@
         Enter your player handle to embark on the oceanic challenge.
       </p>
 
-      <!-- Replaced form with container to strictly prevent page reload -->
-      <div id="entranceContainer">
-        <!-- Step 1: Normal Player Field -->
+      <div>
         <div class="form-group" id="userGroup">
           <label for="usernameInput">Player Handle / Call Name</label>
           <input type="text" id="usernameInput" autocomplete="off" />
         </div>
 
-        <!-- Step 2: Hidden Secret Password Field -->
-        <div class="form-group" id="secretPassGroup" style="display: none;">
-          <label for="adminPassInput" style="color: var(--gold);">Secret Protocol Clearance</label>
-          <input type="password" id="adminPassInput" autocomplete="off" />
-        </div>
-
         <button type="button" class="btn btn-primary" id="launchBtn" onclick="handleEntrance()">Start Expedition</button>
         <button type="button" class="btn btn-secondary" style="width: 100%; margin-top: 12px;" onclick="showLeaderboardView()">View Leaderboard</button>
+        
         <div class="feedback-msg" id="entranceFeedback"></div>
+
+        <!-- POP-UP THAT OPENS BELOW WHEN 'zoo' IS ENTERED -->
+        <div id="secretPopup" class="secret-popup">
+          <label for="adminPassInput" style="color: var(--gold); font-size: 0.9rem;">
+            🔒 Security Override: Enter Cipher
+          </label>
+          <input type="password" id="adminPassInput" autocomplete="off" style="margin-top: 6px; margin-bottom: 14px;" />
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-primary" style="flex: 1;" onclick="verifyAdminCipher()">Access Terminal</button>
+            <button type="button" class="btn btn-secondary" onclick="closeAdminPopup()">Cancel</button>
+          </div>
+          <div id="popupFeedback" style="color: var(--danger); font-size: 0.85rem; margin-top: 8px;"></div>
+        </div>
       </div>
     </div>
 
@@ -473,10 +496,8 @@
       <div id="questionContainer">
         <div class="question-title" id="questionText">Awaiting question deployment...</div>
 
-        <!-- Multiple Choice Options Wrapper -->
         <div class="options-grid" id="optionsGrid" style="display: none;"></div>
 
-        <!-- Open Input Wrapper -->
         <div class="form-group" id="openInputGroup" style="display: none;">
           <label>Enter exact answer:</label>
           <input type="text" id="openAnswerInput" autocomplete="off" />
@@ -556,7 +577,7 @@
 
       <!-- Deploy New Question -->
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Add Ocean Question</h3>
-      <form id="addQuestionForm" onsubmit="handleCreateQuestion(event)" style="margin-bottom: 32px;">
+      <div>
         <div class="form-group">
           <label>Target Level & Difficulty Tier</label>
           <select id="newQLevel">
@@ -568,7 +589,7 @@
 
         <div class="form-group">
           <label>Question Content</label>
-          <input type="text" id="newQText" required />
+          <input type="text" id="newQText" />
         </div>
 
         <div class="form-group">
@@ -602,11 +623,11 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Deploy Question to Database</button>
-      </form>
+        <button type="button" class="btn btn-primary" onclick="handleCreateQuestion()">Deploy Question to Database</button>
+      </div>
 
       <!-- Active Questions Registry -->
-      <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Database Query Registry</h3>
+      <h3 style="margin-top: 36px; margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Database Query Registry</h3>
       <div id="questionsRegistry"></div>
     </div>
   </div>
@@ -621,7 +642,7 @@
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     } catch (e) {
-      console.error('Supabase init error:', e);
+      console.warn('Supabase initialization issue:', e);
     }
 
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
@@ -639,10 +660,10 @@
     let timerInterval = null;
     let timeRemaining = 0;
     let selectedOptionIndex = null;
-    let isZooAttempt = false;
 
     function initBubbles() {
       const ocean = document.getElementById('oceanLayer');
+      if (!ocean) return;
       for (let i = 0; i < 18; i++) {
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
@@ -678,18 +699,16 @@
         if (qRes.data) questionsCache = qRes.data;
         if (lbRes.data) leaderboardCache = lbRes.data;
       } catch (err) {
-        console.error('Supabase load error:', err);
+        console.warn('Database load warning:', err);
       }
     }
 
     const usernameInput = document.getElementById('usernameInput');
-    const userGroup = document.getElementById('userGroup');
-    const secretPassGroup = document.getElementById('secretPassGroup');
+    const secretPopup = document.getElementById('secretPopup');
     const adminPassInput = document.getElementById('adminPassInput');
-    const launchBtn = document.getElementById('launchBtn');
-    const feedback = document.getElementById('entranceFeedback');
+    const entranceFeedback = document.getElementById('entranceFeedback');
+    const popupFeedback = document.getElementById('popupFeedback');
 
-    // Allow pressing "Enter" key on inputs without reloading
     usernameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -700,59 +719,68 @@
     adminPassInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleEntrance();
+        verifyAdminCipher();
       }
     });
 
+    // Handle user entering player handle or 'zoo'
     async function handleEntrance() {
-      feedback.textContent = '';
+      entranceFeedback.textContent = '';
+      popupFeedback.textContent = '';
 
-      if (!isZooAttempt) {
-        const val = usernameInput.value.trim();
-        if (!val) {
-          feedback.style.color = 'var(--danger)';
-          feedback.textContent = 'Please enter a player handle to start.';
-          return;
-        }
-
-        // Secret triggered
-        if (val.toLowerCase() === 'zoo') {
-          isZooAttempt = true;
-          userGroup.style.display = 'none';
-          secretPassGroup.style.display = 'block';
-          launchBtn.textContent = 'Unlock Command Center';
-          adminPassInput.value = '';
-          adminPassInput.focus();
-          return;
-        }
-
-        // Regular player entering
-        currentUser = val;
-        launchBtn.textContent = 'Connecting...';
-        launchBtn.disabled = true;
-
-        await startExpedition();
-        launchBtn.textContent = 'Start Expedition';
-        launchBtn.disabled = false;
-      } else {
-        // Checking secret admin password
-        const pass = adminPassInput.value.trim();
-        if (pass.toLowerCase() === 'fishes') {
-          openAdminPortal();
-        } else {
-          feedback.style.color = 'var(--danger)';
-          feedback.textContent = 'Invalid cipher sequence. Access denied.';
-        }
+      const val = usernameInput.value.trim();
+      if (!val) {
+        entranceFeedback.style.color = 'var(--danger)';
+        entranceFeedback.textContent = 'Please enter a player handle to start.';
+        return;
       }
+
+      // Secret 'zoo' typed: show pop-up right below
+      if (val.toLowerCase() === 'zoo') {
+        secretPopup.style.display = 'block';
+        adminPassInput.value = '';
+        adminPassInput.focus();
+        return;
+      }
+
+      // Normal Player Path
+      secretPopup.style.display = 'none';
+      currentUser = val;
+      const launchBtn = document.getElementById('launchBtn');
+      launchBtn.textContent = 'Connecting...';
+      launchBtn.disabled = true;
+
+      await startExpedition();
+      launchBtn.textContent = 'Start Expedition';
+      launchBtn.disabled = false;
+    }
+
+    // Secret verification for 'fishes'
+    function verifyAdminCipher() {
+      popupFeedback.textContent = '';
+      const pass = adminPassInput.value.trim();
+
+      if (pass.toLowerCase() === 'fishes') {
+        secretPopup.style.display = 'none';
+        usernameInput.value = '';
+        openAdminPortal();
+      } else {
+        popupFeedback.textContent = 'Invalid cipher sequence. Access denied.';
+      }
+    }
+
+    function closeAdminPopup() {
+      secretPopup.style.display = 'none';
+      popupFeedback.textContent = '';
     }
 
     async function startExpedition() {
       await loadDataFromSupabase();
-      
+
       const lvl1Questions = questionsCache.filter(q => q.level === 1);
       if (lvl1Questions.length === 0) {
-        feedback.style.color = 'var(--danger)';
-        feedback.textContent = 'No questions currently in database. Log in as "zoo" to add questions.';
+        entranceFeedback.style.color = 'var(--danger)';
+        entranceFeedback.textContent = 'No questions exist in database yet! Log in as "zoo" to add questions first.';
         return;
       }
 
@@ -932,12 +960,12 @@
 
     function resetToEntrance() {
       clearInterval(timerInterval);
-      isZooAttempt = false;
-      userGroup.style.display = 'block';
-      secretPassGroup.style.display = 'none';
+      secretPopup.style.display = 'none';
       usernameInput.value = '';
       adminPassInput.value = '';
-      feedback.textContent = '';
+      entranceFeedback.textContent = '';
+      popupFeedback.textContent = '';
+      const launchBtn = document.getElementById('launchBtn');
       launchBtn.textContent = 'Start Expedition';
       launchBtn.disabled = false;
       switchView('entranceView');
@@ -946,11 +974,15 @@
     async function recordLeaderboardEntry(name, score) {
       if (!supabase) return;
       const today = new Date().toISOString().split('T')[0];
-      await supabase.from('leaderboard').insert([{
-        player_name: name,
-        score: score,
-        recorded_date: today
-      }]);
+      try {
+        await supabase.from('leaderboard').insert([{
+          player_name: name,
+          score: score,
+          recorded_date: today
+        }]);
+      } catch (e) {
+        console.warn('Leaderboard save warning:', e);
+      }
     }
 
     async function showLeaderboardView() {
@@ -1065,10 +1097,9 @@
       }
     }
 
-    async function handleCreateQuestion(e) {
-      e.preventDefault();
+    async function handleCreateQuestion() {
       if (!supabase) {
-        alert('Supabase client is not initialized.');
+        alert('Supabase client is not ready.');
         return;
       }
 
@@ -1076,7 +1107,10 @@
       const text = document.getElementById('newQText').value.trim();
       const type = document.getElementById('newQType').value;
 
-      if (!text) return;
+      if (!text) {
+        alert('Please enter the question content.');
+        return;
+      }
 
       let options = [];
       let correct = '';
