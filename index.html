@@ -247,7 +247,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Secret Pop-up Box */
     .secret-popup {
       display: none;
       background: rgba(10, 30, 52, 0.97);
@@ -455,7 +454,7 @@
         
         <div class="feedback-msg" id="entranceFeedback"></div>
 
-        <!-- POP-UP BOX BELOW INPUT WHEN 'zoo' IS ENTERED -->
+        <!-- POP-UP SECRET BOX -->
         <div id="secretPopup" class="secret-popup">
           <label for="adminPassInput" style="color: var(--gold); font-size: 0.9rem;">
             🔒 Security Override: Enter Secret Cipher
@@ -470,18 +469,18 @@
       </div>
     </div>
 
-    <!-- VIEW 2: NO QUESTIONS AVAILABLE STATE -->
+    <!-- VIEW 2: NO AVAILABLE QUESTIONS -->
     <div id="noQuestionsView" class="glass-card view" style="text-align: center;">
       <div style="font-size: 3rem; margin-bottom: 16px;">🌊</div>
       <h2 style="margin-bottom: 12px; color: var(--gold);">No Available Questions</h2>
       <p style="color: var(--text-muted); margin-bottom: 28px; line-height: 1.6;">
-        The deep sea survey grid currently has no active queries deployed for this expedition.<br>
+        The deep sea survey grid currently has no active queries deployed for this sector.<br>
         Please consult system administration to populate the inquiry bank.
       </p>
       <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Return to Surface</button>
     </div>
 
-    <!-- VIEW 3: QUIZ INTERFACE -->
+    <!-- VIEW 3: QUIZ VIEW -->
     <div id="quizView" class="glass-card view">
       <div class="quiz-header">
         <div>
@@ -515,7 +514,7 @@
       </div>
     </div>
 
-    <!-- VIEW 4: LEVEL SUMMARY -->
+    <!-- VIEW 4: SUMMARY VIEW -->
     <div id="summaryView" class="glass-card view" style="text-align: center;">
       <h2 id="summaryHeading" style="margin-bottom: 12px;">Sector Completed</h2>
       <p id="summaryDesc" style="color: var(--text-muted); margin-bottom: 24px;"></p>
@@ -531,7 +530,7 @@
       </div>
     </div>
 
-    <!-- VIEW 5: PUBLIC LEADERBOARD -->
+    <!-- VIEW 5: LEADERBOARD VIEW -->
     <div id="leaderboardView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>🏆 Hall of Oceanic Champions</h2>
@@ -553,7 +552,7 @@
       <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
     </div>
 
-    <!-- VIEW 6: ADMIN SECRET PORTAL -->
+    <!-- VIEW 6: ADMIN PORTAL -->
     <div id="adminView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h2>🛠 Marine Command // Secret Portal</h2>
@@ -578,12 +577,12 @@
       </div>
       <button type="button" class="btn btn-secondary" style="margin-bottom: 32px;" onclick="saveTimers()">Update Level Timers</button>
 
-      <!-- Manage Players & Leaderboard -->
+      <!-- Leaderboard Registry -->
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Leaderboard Player Registry</h3>
       <div id="adminLeaderboardList" style="margin-bottom: 24px;"></div>
       <button type="button" class="btn btn-danger" style="margin-bottom: 32px;" onclick="clearAllLeaderboard()">Wipe Entire Leaderboard</button>
 
-      <!-- Deploy New Question -->
+      <!-- Add Question -->
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Add Ocean Question</h3>
       <div>
         <div class="form-group">
@@ -641,7 +640,7 @@
   </div>
 
   <script>
-    // Direct Native REST API Connection (Zero CDN Dependencies)
+    // Direct Native REST Endpoint
     const SUPABASE_BASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co/rest/v1';
     const SUPABASE_API_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
 
@@ -690,7 +689,6 @@
       if (target) target.classList.add('active');
     }
 
-    // Direct fetch with timeout fallback
     async function loadDataFromSupabase() {
       try {
         const fetchWithTimeout = (url) => {
@@ -743,7 +741,6 @@
       }
     });
 
-    // Handle user entering player handle or 'zoo'
     async function handleEntrance() {
       entranceFeedback.textContent = '';
       popupFeedback.textContent = '';
@@ -755,7 +752,6 @@
         return;
       }
 
-      // Secret 'zoo' check
       if (val.toLowerCase() === 'zoo') {
         secretPopup.style.display = 'block';
         adminPassInput.value = '';
@@ -763,7 +759,6 @@
         return;
       }
 
-      // Normal Player Path
       secretPopup.style.display = 'none';
       currentUser = val;
       const launchBtn = document.getElementById('launchBtn');
@@ -775,7 +770,6 @@
       launchBtn.disabled = false;
     }
 
-    // Secret verification for 'fishes'
     function verifyAdminCipher() {
       popupFeedback.textContent = '';
       const pass = adminPassInput.value.trim();
@@ -797,7 +791,6 @@
     async function startExpedition() {
       await loadDataFromSupabase();
 
-      // IF NO QUESTIONS EXIST IN DATABASE: SHOW DEDICATED EMPTY SCREEN
       if (!questionsCache || questionsCache.length === 0) {
         switchView('noQuestionsView');
         return;
@@ -1162,26 +1155,31 @@
         correct = correctVal;
       }
 
-      const res = await fetch(`${SUPABASE_BASE_URL}/questions`, {
-        method: 'POST',
-        headers: dbHeaders,
-        body: JSON.stringify([{ level, type, text, options, correct }])
-      });
+      try {
+        const res = await fetch(`${SUPABASE_BASE_URL}/questions`, {
+          method: 'POST',
+          headers: dbHeaders,
+          body: JSON.stringify([{ level, type, text, options, correct }])
+        });
 
-      if (!res.ok) {
-        alert('Error saving question to database.');
-        return;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          alert('Database Error: ' + (errData.message || errData.hint || res.statusText));
+          return;
+        }
+
+        await renderAdminQuestionsList();
+
+        document.getElementById('newQText').value = '';
+        document.getElementById('optA').value = '';
+        document.getElementById('optB').value = '';
+        document.getElementById('optC').value = '';
+        document.getElementById('optD').value = '';
+        document.getElementById('openCorrectAnswer').value = '';
+        alert('Question deployed directly to Supabase!');
+      } catch (err) {
+        alert('Network request failed: ' + err.message);
       }
-
-      await renderAdminQuestionsList();
-
-      document.getElementById('newQText').value = '';
-      document.getElementById('optA').value = '';
-      document.getElementById('optB').value = '';
-      document.getElementById('optC').value = '';
-      document.getElementById('optD').value = '';
-      document.getElementById('openCorrectAnswer').value = '';
-      alert('Question deployed directly to Supabase!');
     }
 
     async function removeQuestion(id) {
