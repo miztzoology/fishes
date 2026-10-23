@@ -7,14 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Supabase JS Client CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
       --bg-dark: #020713;
-      --bg-card: rgba(6, 21, 40, 0.88);
+      --bg-card: rgba(6, 21, 40, 0.92);
       --border-glow: rgba(0, 242, 254, 0.35);
       --cyan: #00f2fe;
       --teal: #4facfe;
@@ -250,14 +247,14 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Secret Pop-up Box Below Input */
+    /* Secret Pop-up Box */
     .secret-popup {
       display: none;
-      background: rgba(14, 38, 66, 0.95);
+      background: rgba(10, 30, 52, 0.97);
       border: 2px solid var(--gold);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 209, 102, 0.3);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 209, 102, 0.35);
       border-radius: 14px;
-      padding: 20px;
+      padding: 22px;
       margin-top: 18px;
       animation: slideDown 0.35s ease forwards;
     }
@@ -458,12 +455,12 @@
         
         <div class="feedback-msg" id="entranceFeedback"></div>
 
-        <!-- POP-UP THAT OPENS BELOW WHEN 'zoo' IS ENTERED -->
+        <!-- POP-UP BOX BELOW INPUT WHEN 'zoo' IS ENTERED -->
         <div id="secretPopup" class="secret-popup">
           <label for="adminPassInput" style="color: var(--gold); font-size: 0.9rem;">
-            🔒 Security Override: Enter Cipher
+            🔒 Security Override: Enter Secret Cipher
           </label>
-          <input type="password" id="adminPassInput" autocomplete="off" style="margin-top: 6px; margin-bottom: 14px;" />
+          <input type="password" id="adminPassInput" autocomplete="off" style="margin-top: 8px; margin-bottom: 14px;" />
           <div style="display: flex; gap: 10px;">
             <button type="button" class="btn btn-primary" style="flex: 1;" onclick="verifyAdminCipher()">Access Terminal</button>
             <button type="button" class="btn btn-secondary" onclick="closeAdminPopup()">Cancel</button>
@@ -473,7 +470,18 @@
       </div>
     </div>
 
-    <!-- VIEW 2: QUIZ INTERFACE -->
+    <!-- VIEW 2: NO QUESTIONS AVAILABLE STATE -->
+    <div id="noQuestionsView" class="glass-card view" style="text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 16px;">🌊</div>
+      <h2 style="margin-bottom: 12px; color: var(--gold);">No Available Questions</h2>
+      <p style="color: var(--text-muted); margin-bottom: 28px; line-height: 1.6;">
+        The deep sea survey grid currently has no active queries deployed for this expedition.<br>
+        Please consult system administration to populate the inquiry bank.
+      </p>
+      <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Return to Surface</button>
+    </div>
+
+    <!-- VIEW 3: QUIZ INTERFACE -->
     <div id="quizView" class="glass-card view">
       <div class="quiz-header">
         <div>
@@ -507,7 +515,7 @@
       </div>
     </div>
 
-    <!-- VIEW 3: LEVEL SUMMARY -->
+    <!-- VIEW 4: LEVEL SUMMARY -->
     <div id="summaryView" class="glass-card view" style="text-align: center;">
       <h2 id="summaryHeading" style="margin-bottom: 12px;">Sector Completed</h2>
       <p id="summaryDesc" style="color: var(--text-muted); margin-bottom: 24px;"></p>
@@ -523,7 +531,7 @@
       </div>
     </div>
 
-    <!-- VIEW 4: PUBLIC LEADERBOARD -->
+    <!-- VIEW 5: PUBLIC LEADERBOARD -->
     <div id="leaderboardView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>🏆 Hall of Oceanic Champions</h2>
@@ -545,7 +553,7 @@
       <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
     </div>
 
-    <!-- VIEW 5: ADMIN SECRET PORTAL -->
+    <!-- VIEW 6: ADMIN SECRET PORTAL -->
     <div id="adminView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h2>🛠 Marine Command // Secret Portal</h2>
@@ -633,17 +641,16 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
+    // Direct Native REST API Connection (Zero CDN Dependencies)
+    const SUPABASE_BASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co/rest/v1';
+    const SUPABASE_API_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
 
-    let supabase = null;
-    try {
-      if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-    } catch (e) {
-      console.warn('Supabase initialization issue:', e);
-    }
+    const dbHeaders = {
+      'apikey': SUPABASE_API_KEY,
+      'Authorization': `Bearer ${SUPABASE_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
 
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
 
@@ -679,27 +686,40 @@
 
     function switchView(viewId) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById(viewId).classList.add('active');
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
     }
 
+    // Direct fetch with timeout fallback
     async function loadDataFromSupabase() {
-      if (!supabase) return;
       try {
-        const [timersRes, qRes, lbRes] = await Promise.all([
-          supabase.from('level_config').select('*'),
-          supabase.from('questions').select('*').order('created_at', { ascending: true }),
-          supabase.from('leaderboard').select('*').order('score', { ascending: false })
+        const fetchWithTimeout = (url) => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 4000);
+          return fetch(url, { headers: dbHeaders, signal: controller.signal })
+            .then(res => res.json())
+            .finally(() => clearTimeout(timer));
+        };
+
+        const [timersData, qData, lbData] = await Promise.allSettled([
+          fetchWithTimeout(`${SUPABASE_BASE_URL}/level_config?select=*`),
+          fetchWithTimeout(`${SUPABASE_BASE_URL}/questions?select=*&order=created_at.asc`),
+          fetchWithTimeout(`${SUPABASE_BASE_URL}/leaderboard?select=*&order=score.desc`)
         ]);
 
-        if (timersRes.data && timersRes.data.length > 0) {
-          timersRes.data.forEach(row => {
+        if (timersData.status === 'fulfilled' && Array.isArray(timersData.value)) {
+          timersData.value.forEach(row => {
             levelTimes[row.level_id] = row.time_limit;
           });
         }
-        if (qRes.data) questionsCache = qRes.data;
-        if (lbRes.data) leaderboardCache = lbRes.data;
+        if (qData.status === 'fulfilled' && Array.isArray(qData.value)) {
+          questionsCache = qData.value;
+        }
+        if (lbData.status === 'fulfilled' && Array.isArray(lbData.value)) {
+          leaderboardCache = lbData.value;
+        }
       } catch (err) {
-        console.warn('Database load warning:', err);
+        console.warn('Network sync notice:', err);
       }
     }
 
@@ -735,7 +755,7 @@
         return;
       }
 
-      // Secret 'zoo' typed: show pop-up right below
+      // Secret 'zoo' check
       if (val.toLowerCase() === 'zoo') {
         secretPopup.style.display = 'block';
         adminPassInput.value = '';
@@ -777,10 +797,15 @@
     async function startExpedition() {
       await loadDataFromSupabase();
 
+      // IF NO QUESTIONS EXIST IN DATABASE: SHOW DEDICATED EMPTY SCREEN
+      if (!questionsCache || questionsCache.length === 0) {
+        switchView('noQuestionsView');
+        return;
+      }
+
       const lvl1Questions = questionsCache.filter(q => q.level === 1);
       if (lvl1Questions.length === 0) {
-        entranceFeedback.style.color = 'var(--danger)';
-        entranceFeedback.textContent = 'No questions exist in database yet! Log in as "zoo" to add questions first.';
+        switchView('noQuestionsView');
         return;
       }
 
@@ -808,8 +833,7 @@
       document.getElementById('pointsPerQBadge').textContent = `+${pts} ${pts === 1 ? 'Pt' : 'Pts'} / Q`;
 
       if (currentQuestions.length === 0) {
-        alert(`No questions configured for Level ${lvl}. Please add questions via Admin Portal.`);
-        resetToEntrance();
+        switchView('noQuestionsView');
         return;
       }
 
@@ -972,16 +996,15 @@
     }
 
     async function recordLeaderboardEntry(name, score) {
-      if (!supabase) return;
       const today = new Date().toISOString().split('T')[0];
       try {
-        await supabase.from('leaderboard').insert([{
-          player_name: name,
-          score: score,
-          recorded_date: today
-        }]);
+        await fetch(`${SUPABASE_BASE_URL}/leaderboard`, {
+          method: 'POST',
+          headers: dbHeaders,
+          body: JSON.stringify([{ player_name: name, score: score, recorded_date: today }])
+        });
       } catch (e) {
-        console.warn('Leaderboard save warning:', e);
+        console.warn('Leaderboard record notice:', e);
       }
     }
 
@@ -990,7 +1013,7 @@
       const tbody = document.getElementById('leaderboardBody');
       tbody.innerHTML = '';
 
-      if (leaderboardCache.length === 0) {
+      if (!leaderboardCache || leaderboardCache.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 24px;">No player records registered yet.</td></tr>`;
       } else {
         leaderboardCache.forEach((entry, i) => {
@@ -1017,7 +1040,7 @@
       const list = document.getElementById('adminLeaderboardList');
       list.innerHTML = '';
 
-      if (leaderboardCache.length === 0) {
+      if (!leaderboardCache || leaderboardCache.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted);">No player records on leaderboard.</p>';
         return;
       }
@@ -1040,17 +1063,21 @@
     }
 
     async function removeLeaderboardUser(id) {
-      if (!supabase) return;
       if (confirm('Remove this player from the leaderboard?')) {
-        await supabase.from('leaderboard').delete().eq('id', id);
+        await fetch(`${SUPABASE_BASE_URL}/leaderboard?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: dbHeaders
+        });
         await renderAdminLeaderboard();
       }
     }
 
     async function clearAllLeaderboard() {
-      if (!supabase) return;
       if (confirm('Are you sure you want to completely erase the entire leaderboard?')) {
-        await supabase.from('leaderboard').delete().neq('score', -9999);
+        await fetch(`${SUPABASE_BASE_URL}/leaderboard?score=neq.-9999`, {
+          method: 'DELETE',
+          headers: dbHeaders
+        });
         await renderAdminLeaderboard();
       }
     }
@@ -1066,16 +1093,19 @@
     }
 
     async function saveTimers() {
-      if (!supabase) return;
       const t1 = parseInt(document.getElementById('timeLvl1').value) || 30;
       const t2 = parseInt(document.getElementById('timeLvl2').value) || 25;
       const t3 = parseInt(document.getElementById('timeLvl3').value) || 20;
 
-      await supabase.from('level_config').upsert([
-        { level_id: 1, time_limit: t1 },
-        { level_id: 2, time_limit: t2 },
-        { level_id: 3, time_limit: t3 }
-      ]);
+      await fetch(`${SUPABASE_BASE_URL}/level_config`, {
+        method: 'POST',
+        headers: { ...dbHeaders, 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify([
+          { level_id: 1, time_limit: t1 },
+          { level_id: 2, time_limit: t2 },
+          { level_id: 3, time_limit: t3 }
+        ])
+      });
 
       levelTimes[1] = t1;
       levelTimes[2] = t2;
@@ -1098,11 +1128,6 @@
     }
 
     async function handleCreateQuestion() {
-      if (!supabase) {
-        alert('Supabase client is not ready.');
-        return;
-      }
-
       const level = parseInt(document.getElementById('newQLevel').value);
       const text = document.getElementById('newQText').value.trim();
       const type = document.getElementById('newQType').value;
@@ -1137,16 +1162,14 @@
         correct = correctVal;
       }
 
-      const { error } = await supabase.from('questions').insert([{
-        level,
-        type,
-        text,
-        options,
-        correct
-      }]);
+      const res = await fetch(`${SUPABASE_BASE_URL}/questions`, {
+        method: 'POST',
+        headers: dbHeaders,
+        body: JSON.stringify([{ level, type, text, options, correct }])
+      });
 
-      if (error) {
-        alert('Error saving question: ' + error.message);
+      if (!res.ok) {
+        alert('Error saving question to database.');
         return;
       }
 
@@ -1162,9 +1185,11 @@
     }
 
     async function removeQuestion(id) {
-      if (!supabase) return;
       if (confirm('Delete this question from Supabase?')) {
-        await supabase.from('questions').delete().eq('id', id);
+        await fetch(`${SUPABASE_BASE_URL}/questions?id=eq.${id}`, {
+          method: 'DELETE',
+          headers: dbHeaders
+        });
         await renderAdminQuestionsList();
       }
     }
@@ -1174,7 +1199,7 @@
       const list = document.getElementById('questionsRegistry');
       list.innerHTML = '';
 
-      if (questionsCache.length === 0) {
+      if (!questionsCache || questionsCache.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted);">No questions currently in the database. Add some above to start the game.</p>';
         return;
       }
