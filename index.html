@@ -7,6 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root {
       --bg-dark: #020713;
@@ -607,17 +611,20 @@
   </div>
 
   <script>
+    // ========================================================
+    // YOUR SUPABASE CREDENTIALS DIRECTLY INTEGRATED
+    // ========================================================
+    const SUPABASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
+    // ========================================================
+
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
 
-    const DEFAULT_CONFIG = {
-      levelTimes: { 1: 30, 2: 25, 3: 20 },
-      leaderboard: [],
-      questions: []
-    };
-
-    let appData = JSON.parse(localStorage.getItem('ocean_nexus_data')) || DEFAULT_CONFIG;
-    if (!appData.leaderboard) appData.leaderboard = [];
-    if (!appData.questions) appData.questions = [];
+    let levelTimes = { 1: 30, 2: 25, 3: 20 };
+    let questionsCache = [];
+    let leaderboardCache = [];
 
     let currentUser = '';
     let currentLevel = 1;
@@ -645,13 +652,37 @@
       }
     }
 
-    function syncStorage() {
-      localStorage.setItem('ocean_nexus_data', JSON.stringify(appData));
-    }
-
     function switchView(viewId) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById(viewId).classList.add('active');
+    }
+
+    async function loadDataFromSupabase() {
+      if (!supabase) return;
+
+      try {
+        // 1. Level Timers
+        const { data: timersData } = await supabase.from('level_config').select('*');
+        if (timersData && timersData.length > 0) {
+          timersData.forEach(row => {
+            levelTimes[row.level_id] = row.time_limit;
+          });
+        }
+
+        // 2. Questions
+        const { data: qData } = await supabase.from('questions').select('*').order('created_at', { ascending: true });
+        if (qData) {
+          questionsCache = qData;
+        }
+
+        // 3. Leaderboard
+        const { data: lbData } = await supabase.from('leaderboard').select('*').order('score', { ascending: false });
+        if (lbData) {
+          leaderboardCache = lbData;
+        }
+      } catch (err) {
+        console.error('Supabase load error:', err);
+      }
     }
 
     const usernameInput = document.getElementById('usernameInput');
@@ -695,7 +726,8 @@
       }
     }
 
-    function startExpedition() {
+    async function startExpedition() {
+      await loadDataFromSupabase();
       currentLevel = 1;
       totalScore = 0;
       document.getElementById('playerDisplayName').textContent = currentUser;
@@ -707,7 +739,7 @@
       currentLevel = lvl;
       currentQuestionIndex = 0;
       levelScore = 0;
-      currentQuestions = appData.questions.filter(q => q.level === lvl);
+      currentQuestions = questionsCache.filter(q => q.level === lvl);
 
       const zoneNames = {
         1: 'Level 1: Sunlit Zone',
@@ -734,7 +766,7 @@
       selectedOptionIndex = null;
 
       const q = currentQuestions[currentQuestionIndex];
-      const maxTime = appData.levelTimes[currentLevel] || 30;
+      const maxTime = levelTimes[currentLevel] || 30;
       timeRemaining = maxTime;
 
       updateTimerUI(maxTime);
@@ -752,7 +784,8 @@
         optionsGrid.style.display = 'grid';
         optionsGrid.innerHTML = '';
 
-        q.options.forEach((opt, idx) => {
+        const opts = Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]');
+        opts.forEach((opt, idx) => {
           const btn = document.createElement('button');
           btn.className = 'option-btn';
           btn.textContent = `${String.fromCharCode(65 + idx)}. ${opt}`;
@@ -812,7 +845,7 @@
           alert('Please select an option before continuing.');
           return;
         }
-        isCorrect = selectedOptionIndex === q.correct;
+        isCorrect = String(selectedOptionIndex) === String(q.correct);
       } else {
         const userText = document.getElementById('openAnswerInput').value.trim().toLowerCase();
         if (!userText) {
@@ -842,7 +875,7 @@
       }
     }
 
-    function finishLevel() {
+    async function finishLevel() {
       const heading = document.getElementById('summaryHeading');
       const desc = document.getElementById('summaryDesc');
       const scoreDisplay = document.getElementById('summaryScore');
@@ -859,7 +892,7 @@
         heading.textContent = `Challenge Conquered!`;
         desc.textContent = `Expedition finalized. You navigated all depths and scored a total of ${totalScore} points.`;
         nextBtn.style.display = 'none';
-        recordLeaderboardEntry(currentUser, totalScore);
+        await recordLeaderboardEntry(currentUser, totalScore);
       }
 
       switchView('summaryView');
@@ -881,27 +914,25 @@
       switchView('entranceView');
     }
 
-    function recordLeaderboardEntry(name, score) {
+    async function recordLeaderboardEntry(name, score) {
+      if (!supabase) return;
       const today = new Date().toISOString().split('T')[0];
-      const entry = {
-        id: 'p_' + Date.now(),
-        name,
-        score,
-        date: today
-      };
-      appData.leaderboard.push(entry);
-      appData.leaderboard.sort((a, b) => b.score - a.score);
-      syncStorage();
+      await supabase.from('leaderboard').insert([{
+        player_name: name,
+        score: score,
+        recorded_date: today
+      }]);
     }
 
-    function showLeaderboardView() {
+    async function showLeaderboardView() {
+      await loadDataFromSupabase();
       const tbody = document.getElementById('leaderboardBody');
       tbody.innerHTML = '';
 
-      if (appData.leaderboard.length === 0) {
+      if (leaderboardCache.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 24px;">No player records registered yet.</td></tr>`;
       } else {
-        appData.leaderboard.forEach((entry, i) => {
+        leaderboardCache.forEach((entry, i) => {
           const row = document.createElement('tr');
           let rankBadge = `#${i + 1}`;
           if (i === 0) rankBadge = '🥇 #1';
@@ -910,9 +941,9 @@
 
           row.innerHTML = `
             <td>${rankBadge}</td>
-            <td>${entry.name}</td>
+            <td>${entry.player_name}</td>
             <td><strong>${entry.score} pts</strong></td>
-            <td style="color: var(--text-muted); font-size: 0.85rem;">${entry.date}</td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${entry.recorded_date || ''}</td>
           `;
           tbody.appendChild(row);
         });
@@ -920,23 +951,24 @@
       switchView('leaderboardView');
     }
 
-    function renderAdminLeaderboard() {
+    async function renderAdminLeaderboard() {
+      await loadDataFromSupabase();
       const list = document.getElementById('adminLeaderboardList');
       list.innerHTML = '';
 
-      if (appData.leaderboard.length === 0) {
+      if (leaderboardCache.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted);">No player records on leaderboard.</p>';
         return;
       }
 
-      appData.leaderboard.forEach((entry, idx) => {
+      leaderboardCache.forEach((entry, idx) => {
         const div = document.createElement('div');
         div.className = 'registry-item';
         div.innerHTML = `
           <div>
-            <strong style="color: var(--cyan);">#${idx + 1} ${entry.name}</strong>
+            <strong style="color: var(--cyan);">#${idx + 1} ${entry.player_name}</strong>
             <span style="margin-left: 10px; color: var(--gold);">${entry.score} Points</span>
-            <span style="margin-left: 10px; color: var(--text-muted); font-size: 0.8rem;">(${entry.date})</span>
+            <span style="margin-left: 10px; color: var(--text-muted); font-size: 0.8rem;">(${entry.recorded_date || ''})</span>
           </div>
           <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem;" onclick="removeLeaderboardUser('${entry.id}')">
             Remove Player
@@ -946,37 +978,48 @@
       });
     }
 
-    function removeLeaderboardUser(id) {
+    async function removeLeaderboardUser(id) {
+      if (!supabase) return;
       if (confirm('Remove this player from the leaderboard?')) {
-        appData.leaderboard = appData.leaderboard.filter(e => e.id !== id);
-        syncStorage();
-        renderAdminLeaderboard();
+        await supabase.from('leaderboard').delete().eq('id', id);
+        await renderAdminLeaderboard();
       }
     }
 
-    function clearAllLeaderboard() {
+    async function clearAllLeaderboard() {
+      if (!supabase) return;
       if (confirm('Are you sure you want to completely erase the entire leaderboard?')) {
-        appData.leaderboard = [];
-        syncStorage();
-        renderAdminLeaderboard();
+        await supabase.from('leaderboard').delete().neq('score', -9999);
+        await renderAdminLeaderboard();
       }
     }
 
-    function openAdminPortal() {
-      document.getElementById('timeLvl1').value = appData.levelTimes[1] || 30;
-      document.getElementById('timeLvl2').value = appData.levelTimes[2] || 25;
-      document.getElementById('timeLvl3').value = appData.levelTimes[3] || 20;
-      renderAdminLeaderboard();
-      renderAdminQuestionsList();
+    async function openAdminPortal() {
+      await loadDataFromSupabase();
+      document.getElementById('timeLvl1').value = levelTimes[1] || 30;
+      document.getElementById('timeLvl2').value = levelTimes[2] || 25;
+      document.getElementById('timeLvl3').value = levelTimes[3] || 20;
+      await renderAdminLeaderboard();
+      await renderAdminQuestionsList();
       switchView('adminView');
     }
 
-    function saveTimers() {
-      appData.levelTimes[1] = parseInt(document.getElementById('timeLvl1').value) || 30;
-      appData.levelTimes[2] = parseInt(document.getElementById('timeLvl2').value) || 25;
-      appData.levelTimes[3] = parseInt(document.getElementById('timeLvl3').value) || 20;
-      syncStorage();
-      alert('Level timers updated successfully!');
+    async function saveTimers() {
+      if (!supabase) return;
+      const t1 = parseInt(document.getElementById('timeLvl1').value) || 30;
+      const t2 = parseInt(document.getElementById('timeLvl2').value) || 25;
+      const t3 = parseInt(document.getElementById('timeLvl3').value) || 20;
+
+      await supabase.from('level_config').upsert([
+        { level_id: 1, time_limit: t1 },
+        { level_id: 2, time_limit: t2 },
+        { level_id: 3, time_limit: t3 }
+      ]);
+
+      levelTimes[1] = t1;
+      levelTimes[2] = t2;
+      levelTimes[3] = t3;
+      alert('Level timers updated successfully in Supabase!');
     }
 
     function toggleQuestionTypeFields() {
@@ -993,20 +1036,18 @@
       }
     }
 
-    function handleCreateQuestion(e) {
+    async function handleCreateQuestion(e) {
       e.preventDefault();
+      if (!supabase) return;
+
       const level = parseInt(document.getElementById('newQLevel').value);
       const text = document.getElementById('newQText').value.trim();
       const type = document.getElementById('newQType').value;
 
       if (!text) return;
 
-      const newQuestion = {
-        id: 'q_' + Date.now(),
-        level,
-        type,
-        text
-      };
+      let options = [];
+      let correct = '';
 
       if (type === 'mcq') {
         const a = document.getElementById('optA').value.trim();
@@ -1019,20 +1060,31 @@
           return;
         }
 
-        newQuestion.options = [a, b, c, d];
-        newQuestion.correct = parseInt(document.getElementById('mcqCorrectAnswer').value);
+        options = [a, b, c, d];
+        correct = document.getElementById('mcqCorrectAnswer').value;
       } else {
         const correctVal = document.getElementById('openCorrectAnswer').value.trim();
         if (!correctVal) {
           alert('Please provide the correct answer string.');
           return;
         }
-        newQuestion.correct = correctVal;
+        correct = correctVal;
       }
 
-      appData.questions.push(newQuestion);
-      syncStorage();
-      renderAdminQuestionsList();
+      const { error } = await supabase.from('questions').insert([{
+        level,
+        type,
+        text,
+        options,
+        correct
+      }]);
+
+      if (error) {
+        alert('Error saving question: ' + error.message);
+        return;
+      }
+
+      await renderAdminQuestionsList();
 
       document.getElementById('newQText').value = '';
       document.getElementById('optA').value = '';
@@ -1040,33 +1092,35 @@
       document.getElementById('optC').value = '';
       document.getElementById('optD').value = '';
       document.getElementById('openCorrectAnswer').value = '';
-      alert('Question added successfully!');
+      alert('Question deployed directly to Supabase!');
     }
 
-    function removeQuestion(id) {
-      if (confirm('Delete this question from the database?')) {
-        appData.questions = appData.questions.filter(q => q.id !== id);
-        syncStorage();
-        renderAdminQuestionsList();
+    async function removeQuestion(id) {
+      if (!supabase) return;
+      if (confirm('Delete this question from Supabase?')) {
+        await supabase.from('questions').delete().eq('id', id);
+        await renderAdminQuestionsList();
       }
     }
 
-    function renderAdminQuestionsList() {
+    async function renderAdminQuestionsList() {
+      await loadDataFromSupabase();
       const list = document.getElementById('questionsRegistry');
       list.innerHTML = '';
 
-      if (appData.questions.length === 0) {
+      if (questionsCache.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted);">No questions currently in the database. Add some above to start the game.</p>';
         return;
       }
 
-      appData.questions.forEach(q => {
+      questionsCache.forEach(q => {
         const item = document.createElement('div');
         item.className = 'registry-item';
         
         let answerPreview = '';
         if (q.type === 'mcq') {
-          answerPreview = `Answer: [${String.fromCharCode(65 + q.correct)}] ${q.options[q.correct]}`;
+          const opts = Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]');
+          answerPreview = `Answer: [${String.fromCharCode(65 + parseInt(q.correct))}] ${opts[parseInt(q.correct)] || ''}`;
         } else {
           answerPreview = `Answer: "${q.correct}"`;
         }
@@ -1089,7 +1143,10 @@
       });
     }
 
-    window.onload = initBubbles;
+    window.onload = () => {
+      initBubbles();
+      loadDataFromSupabase();
+    };
   </script>
 </body>
 </html>
