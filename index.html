@@ -299,6 +299,13 @@
       margin-left: 8px;
     }
 
+    /* Hearts Life Indicator */
+    .hearts-container {
+      font-size: 1.25rem;
+      letter-spacing: 4px;
+      filter: drop-shadow(0 0 6px rgba(255, 71, 126, 0.6));
+    }
+
     .timer-box {
       font-family: 'Orbitron', sans-serif;
       font-size: 1.3rem;
@@ -486,8 +493,11 @@
         <div>
           <span class="badge badge-level" id="levelBadge">Level 1: Sunlit Zone</span>
           <span class="badge badge-points" id="pointsPerQBadge">+1 Pt / Q</span>
-          <div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">
-            Player: <strong id="playerDisplayName" style="color: #fff;"></strong> | Total: <strong id="liveTotalScore" style="color: var(--gold);">0</strong> pts
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+            <span class="hearts-container" id="heartsDisplay">❤️❤️❤️</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">
+              | <strong id="playerDisplayName" style="color: #fff;"></strong> | Score: <strong id="liveTotalScore" style="color: var(--gold);">0</strong> pts
+            </span>
           </div>
         </div>
         <div class="timer-box">
@@ -514,7 +524,23 @@
       </div>
     </div>
 
-    <!-- VIEW 4: SUMMARY VIEW -->
+    <!-- VIEW 4: GAME OVER (HEARTS DEPLETED) -->
+    <div id="gameOverView" class="glass-card view" style="text-align: center;">
+      <div style="font-size: 3.5rem; margin-bottom: 12px;">💔</div>
+      <h2 style="margin-bottom: 12px; color: var(--danger);">Oxygen Depleted</h2>
+      <p style="color: var(--text-muted); margin-bottom: 24px; line-height: 1.6;">
+        You ran out of hearts in the depths. Pressure integrity lost!
+      </p>
+      <div style="font-size: 2.2rem; font-family: 'Orbitron'; color: var(--gold); margin-bottom: 24px;" id="gameOverScore">
+        0 PTS
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="retryExpedition()">Dive Again</button>
+        <button type="button" class="btn btn-secondary" onclick="resetToEntrance()">Return to Surface</button>
+      </div>
+    </div>
+
+    <!-- VIEW 5: LEVEL SUMMARY -->
     <div id="summaryView" class="glass-card view" style="text-align: center;">
       <h2 id="summaryHeading" style="margin-bottom: 12px;">Sector Completed</h2>
       <p id="summaryDesc" style="color: var(--text-muted); margin-bottom: 24px;"></p>
@@ -530,7 +556,7 @@
       </div>
     </div>
 
-    <!-- VIEW 5: LEADERBOARD VIEW -->
+    <!-- VIEW 6: LEADERBOARD VIEW -->
     <div id="leaderboardView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>🏆 Hall of Oceanic Champions</h2>
@@ -552,7 +578,7 @@
       <button type="button" class="btn btn-primary" onclick="resetToEntrance()">Back to Terminal</button>
     </div>
 
-    <!-- VIEW 6: ADMIN PORTAL -->
+    <!-- VIEW 7: ADMIN PORTAL -->
     <div id="adminView" class="glass-card view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h2>🛠 Marine Command // Secret Portal</h2>
@@ -563,15 +589,15 @@
       <h3 style="margin-bottom: 16px; font-size: 1.1rem; color: var(--cyan);">Adjust Level Countdown Timers (Seconds)</h3>
       <div class="level-timer-row">
         <div class="form-group">
-          <label>Level 1 (Easy • 1 pt)</label>
+          <label>Level 1 (Easy • 1 pt • 3 Hearts)</label>
           <input type="number" id="timeLvl1" min="5" max="300" />
         </div>
         <div class="form-group">
-          <label>Level 2 (Medium • 2 pts)</label>
+          <label>Level 2 (Medium • 2 pts • 4 Hearts)</label>
           <input type="number" id="timeLvl2" min="5" max="300" />
         </div>
         <div class="form-group">
-          <label>Level 3 (Hard • 3 pts)</label>
+          <label>Level 3 (Hard • 3 pts • 5 Hearts)</label>
           <input type="number" id="timeLvl3" min="5" max="300" />
         </div>
       </div>
@@ -588,9 +614,9 @@
         <div class="form-group">
           <label>Target Level & Difficulty Tier</label>
           <select id="newQLevel">
-            <option value="1">Level 1 - Sunlit Zone (1 Point)</option>
-            <option value="2">Level 2 - Twilight Zone (2 Points)</option>
-            <option value="3">Level 3 - Abyssal Trench (3 Points)</option>
+            <option value="1">Level 1 - Sunlit Zone (1 Point • 3 Hearts)</option>
+            <option value="2">Level 2 - Twilight Zone (2 Points • 4 Hearts)</option>
+            <option value="3">Level 3 - Abyssal Trench (3 Points • 5 Hearts)</option>
           </select>
         </div>
 
@@ -640,7 +666,6 @@
   </div>
 
   <script>
-    // Direct Native REST Endpoint
     const SUPABASE_BASE_URL = 'https://voeiskrtgatceyutgwgx.supabase.co/rest/v1';
     const SUPABASE_API_KEY = 'sb_publishable_Pcp4eByFQc_6tv88SknRhQ_IWlv31AL';
 
@@ -652,6 +677,7 @@
     };
 
     const LEVEL_POINTS = { 1: 1, 2: 2, 3: 3 };
+    const LEVEL_MAX_HEARTS = { 1: 3, 2: 4, 3: 5 };
 
     let levelTimes = { 1: 30, 2: 25, 3: 20 };
     let questionsCache = [];
@@ -663,6 +689,7 @@
     let currentQuestionIndex = 0;
     let totalScore = 0;
     let levelScore = 0;
+    let currentHearts = 3;
     let timerInterval = null;
     let timeRemaining = 0;
     let selectedOptionIndex = null;
@@ -687,6 +714,16 @@
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       const target = document.getElementById(viewId);
       if (target) target.classList.add('active');
+    }
+
+    function renderHeartsUI() {
+      const display = document.getElementById('heartsDisplay');
+      if (!display) return;
+      const maxHearts = LEVEL_MAX_HEARTS[currentLevel] || 3;
+      let heartStr = '';
+      for (let i = 0; i < currentHearts; i++) heartStr += '❤️';
+      for (let i = currentHearts; i < maxHearts; i++) heartStr += '🖤';
+      display.textContent = heartStr;
     }
 
     async function loadDataFromSupabase() {
@@ -804,6 +841,7 @@
 
       currentLevel = 1;
       totalScore = 0;
+      currentHearts = LEVEL_MAX_HEARTS[1]; // 3 hearts
       document.getElementById('playerDisplayName').textContent = currentUser;
       document.getElementById('liveTotalScore').textContent = '0';
       loadLevel(currentLevel);
@@ -813,6 +851,7 @@
       currentLevel = lvl;
       currentQuestionIndex = 0;
       levelScore = 0;
+      currentHearts = LEVEL_MAX_HEARTS[lvl]; // Reset/set max hearts for this level
       currentQuestions = questionsCache.filter(q => q.level === lvl);
 
       const zoneNames = {
@@ -830,6 +869,7 @@
         return;
       }
 
+      renderHeartsUI();
       switchView('quizView');
       displayQuestion();
     }
@@ -896,7 +936,7 @@
 
         if (timeRemaining <= 0) {
           clearInterval(timerInterval);
-          advanceQuestion(false);
+          advanceQuestion(false); // Timeout loses a heart!
         }
       }, 1000);
     }
@@ -933,11 +973,29 @@
 
     function advanceQuestion(wasCorrect) {
       clearInterval(timerInterval);
+      const maxHearts = LEVEL_MAX_HEARTS[currentLevel] || 3;
+
       if (wasCorrect) {
+        // Correct answer: Add score AND gain a heart (up to level limit)
         const points = LEVEL_POINTS[currentLevel] || 1;
         totalScore += points;
         levelScore += points;
         document.getElementById('liveTotalScore').textContent = totalScore;
+
+        if (currentHearts < maxHearts) {
+          currentHearts++;
+        }
+      } else {
+        // Wrong answer: Lose a heart
+        currentHearts--;
+      }
+
+      renderHeartsUI();
+
+      // Check if hearts reached 0 (Game Over)
+      if (currentHearts <= 0) {
+        triggerGameOver();
+        return;
       }
 
       currentQuestionIndex++;
@@ -946,6 +1004,17 @@
       } else {
         finishLevel();
       }
+    }
+
+    function triggerGameOver() {
+      clearInterval(timerInterval);
+      document.getElementById('gameOverScore').textContent = `${totalScore} PTS`;
+      recordLeaderboardEntry(currentUser, totalScore);
+      switchView('gameOverView');
+    }
+
+    function retryExpedition() {
+      startExpedition();
     }
 
     async function finishLevel() {
@@ -958,12 +1027,12 @@
 
       if (currentLevel < 3) {
         heading.textContent = `Depth Level ${currentLevel} Cleared!`;
-        desc.textContent = `Sector cleared. You secured ${levelScore} pts in this depth. Ready for Level ${currentLevel + 1}?`;
+        desc.textContent = `Sector cleared with ${currentHearts} hearts remaining. Ready for Level ${currentLevel + 1}?`;
         nextBtn.style.display = 'inline-flex';
         nextBtn.textContent = `Descend to Level ${currentLevel + 1}`;
       } else {
         heading.textContent = `Challenge Conquered!`;
-        desc.textContent = `Expedition finalized. You navigated all depths and scored a total of ${totalScore} points.`;
+        desc.textContent = `Expedition finalized. You navigated all depths with a score of ${totalScore} points.`;
         nextBtn.style.display = 'none';
         await recordLeaderboardEntry(currentUser, totalScore);
       }
@@ -989,6 +1058,7 @@
     }
 
     async function recordLeaderboardEntry(name, score) {
+      if (!name || score <= 0) return;
       const today = new Date().toISOString().split('T')[0];
       try {
         await fetch(`${SUPABASE_BASE_URL}/leaderboard`, {
@@ -1215,11 +1285,12 @@
         }
 
         const pts = LEVEL_POINTS[q.level];
+        const hearts = LEVEL_MAX_HEARTS[q.level];
 
         item.innerHTML = `
           <div>
             <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 4px; font-weight: bold;">
-              LEVEL ${q.level} (${pts} ${pts === 1 ? 'PT' : 'PTS'}) • TYPE: ${q.type.toUpperCase()}
+              LEVEL ${q.level} (${pts} ${pts === 1 ? 'PT' : 'PTS'} • ${hearts} HEARTS) • TYPE: ${q.type.toUpperCase()}
             </div>
             <div style="font-size: 1rem; margin-bottom: 6px; font-weight: 600;">${q.text}</div>
             <div style="font-size: 0.85rem; color: var(--text-muted);">${answerPreview}</div>
